@@ -42,34 +42,35 @@ const int tail_max = 255;
 struct Snake {
 	V2 pos;
 	V2 vel;
+	V2 acc;
 
 	V2 tail[tail_max];
 	int tail_start, tail_end;
-	int tail_len;
+	int tail_len = 20;
 
 	uint32_t accumulator;
 	
-	void update(uint32_t delta_time, Food& food) {
+	void update(uint32_t delta_time, struct Food& food) {
 		accumulator += delta_time;
-		if (accumulator > (100 - (tail_len / 2))) { //update every 200 ms
+		if (accumulator > 100 - (tail_len)) {
 			accumulator = 0;
 
-			tail_start++;
+			vel = acc;
 
-			tail[tail_end] = pos;
+			tail[tail_end % tail_max] = pos;
+
+			tail_start++;
 			tail_end++;
 
 			pos.x += vel.x;
 			pos.y += vel.y;
 
-			if (pos.x < 0)   pos.x = 49;
-			if (pos.y < 0)   pos.y = 49;
-			if (pos.x >= 50) pos.x = 0;
-			if (pos.y >= 50) pos.y = 50;
+			pos.x = (pos.x + 50) % 50;
+			pos.y = (pos.y + 50) % 50;
 
 			if (pos.x == food.x && pos.y == food.y) {
 				tail_len += 1;
-				tail_start--;
+				tail_start -= 1;
 				food.move();
 			}
 
@@ -127,33 +128,10 @@ int WinMain(int, int, const char*, int) {
 					running = false;
 					break;
 
-				case SDLK_w:
-					if (snake.vel.y != 1) {
-						snake.vel.y = -1;
-						snake.vel.x = 0;
-					}
-					break;
-
-				case SDLK_s:
-					if (snake.vel.y != -1) {
-						snake.vel.y = 1;
-						snake.vel.x = 0;
-					}
-					break;
-					
-				case SDLK_a:
-					if (snake.vel.x != 1) {
-						snake.vel.y = 0;
-						snake.vel.x = -1;
-					}
-					break;
-
-				case SDLK_d:
-					if (snake.vel.x != -1) {
-						snake.vel.y = 0;
-						snake.vel.x = 1;
-					}
-					break;
+				case SDLK_w: if (snake.vel.y != 1) snake.acc = { 0, -1 }; break;
+				case SDLK_s: if (snake.vel.y != -1) snake.acc = { 0, 1 }; break;
+				case SDLK_a: if (snake.vel.x != 1) snake.acc = { -1, 0 }; break;
+				case SDLK_d: if (snake.vel.x != -1) snake.acc = { 1, 0 }; break;
 				}
 			}
 		}
@@ -168,6 +146,10 @@ int WinMain(int, int, const char*, int) {
 
 		SDL_RenderPresent(renderer);
 	}
+
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 
 	return 0;
 }
